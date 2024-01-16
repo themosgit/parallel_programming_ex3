@@ -4,54 +4,99 @@
 #include "timer.h"
 #include <time.h>
 
+double* Mat_vect_mult(double local_A[], double x[], int local_n, int n);
 
-long long int monte_carlo(long long int my_first_i, long long int my_last_i );
+void Mat_vect_multS(double A[], double x[], double y[], int n);
 
 int main(int argc, char *argv[]) {
-    int source;
-    long long int result_velh;
-    long long int local_result_velh;
-    long long int plhuos_ripsewn = 10000000;
 
-    MPI_Init(&argc, &argv);
+int n = 1000;
 
-    int my_rank, comm_sz;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
+double* A = malloc(n * n * sizeof(double));
+double* x = malloc(n * sizeof(double));
+double* Y = malloc(n * sizeof(double));
 
-    srand(time(NULL) + my_rank);
+/*MPI_Init(&argc, &argv);
 
-    long long int my_n = plhuos_ripsewn / comm_sz;
-    long long int my_first_i = my_n * my_rank;
-    long long int my_last_i = my_first_i + my_n;
-    local_result_velh = monte_carlo(my_first_i, my_last_i);
+int my_rank, comm_sz;
+MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
 
-    double start, finish;
-    GET_TIME(start);
-         MPI_Reduce(&local_result_velh, &result_velh, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    if(my_rank == 0){
-        GET_TIME(finish);
-        printf("velh %lld\n", result_velh);
-        printf("Elapsed time = %e seconds\n", finish - start);
-        printf("pi: %lf\n", (double) 4 * result_velh / plhuos_ripsewn);
-    }
+srand(time(NULL) + my_rank);
 
-    MPI_Finalize();
-    return 0;
-}
+int local_n = n / comm_sz;
+double* local_a = malloc(local_n * n * sizeof(double));
+double* local_y = malloc(local_n * sizeof(double));
 
-long long int monte_carlo(long long int my_first_i, long long int my_last_i) {
-    int velh = 0;
+double start, finish;
+GET_TIME(start);
 
-    for (long long int i = my_first_i; i < my_last_i; i++) {
-        double x = (rand() % 2000 - 1000) / 1000.0;
-        double y = (rand() % 2000 - 1000) / 1000.0;
-        double tetragwno = x * x + y * y;
-        if (tetragwno <= 1) {
-            velh++;
+if (my_rank == 0) {
+    for (int i = 0; i < n; i++) {
+        x[i] = rand();
+        for (int j = 0; j < n; j++) {
+            A[i * n + j] = rand();
         }
     }
+    MPI_Scatter(A, local_n * n, MPI_DOUBLE, local_a, local_n * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+} else {
+    MPI_Scatter(NULL, local_n * n, MPI_DOUBLE, local_a, local_n * n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+}
 
-    return velh;
+MPI_Bcast(x, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+local_y = Mat_vect_mult(local_a, x, local_n, n);
 
+MPI_Gather(local_y, local_n, MPI_DOUBLE, Y, local_n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+GET_TIME(finish);
+
+if (my_rank == 0) printf("\nElapsed time = %e seconds\n", finish - start);
+
+free(local_a);
+free(local_y);
+MPI_Finalize();
+*/
+
+double start, finish;
+GET_TIME(start);
+
+for (int i = 0; i < n; i++) {
+    x[i] = rand();
+    for (int j = 0; j < n; j++) {
+        A[i * n + j] = rand();
+    }
+}
+
+Mat_vect_multS(A, x, Y, n);
+GET_TIME(finish);
+printf("\nElapsed time = %e seconds\n", finish - start);
+
+free(A);
+free(x);
+free(Y);
+
+
+
+return 0;
+}  
+
+
+double* Mat_vect_mult(double local_A[], double x[], int local_n, int n) {
+    
+    double* local_y = malloc(local_n * sizeof(double));
+    for (int local_i = 0; local_i < local_n; local_i++) {
+        local_y[local_i] = 0.0;
+        for (int j = 0; j < n; j++) {
+            local_y[local_i] += local_A[local_i * n + j] * x[j];
+        }
+    }
+    return local_y;
+}
+
+void Mat_vect_multS(double A[], double x[], double y[], int n){
+    for(int i = 0; i < n; i++) {
+        y[i] = 0.0;
+        for(int j = 0; j < n; j++)
+            y[i] += A[i * n + j] * x[j];
+    }
 }
