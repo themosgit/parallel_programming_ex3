@@ -16,7 +16,7 @@ double* A = malloc(n * n * sizeof(double));
 double* x = malloc(n * sizeof(double));
 double* Y = malloc(n * sizeof(double));
 
-/*MPI_Init(&argc, &argv);
+MPI_Init(&argc, &argv);
 
 int my_rank, comm_sz;
 MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -55,7 +55,7 @@ if (my_rank == 0) printf("\nElapsed time = %e seconds\n", finish - start);
 free(local_a);
 free(local_y);
 MPI_Finalize();
-*/
+/*
 
 double start, finish;
 GET_TIME(start);
@@ -70,7 +70,7 @@ for (int i = 0; i < n; i++) {
 Mat_vect_multS(A, x, Y, n);
 GET_TIME(finish);
 printf("\nElapsed time = %e seconds\n", finish - start);
-
+*/
 free(A);
 free(x);
 free(Y);
